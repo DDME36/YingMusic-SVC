@@ -86,6 +86,23 @@ def run_separation(
 
 
 # ---------------- SVC ----------------
+_SVC_MODEL_CACHE = {}
+
+
+def _get_svc_models(args):
+    """Load SVC models once and reuse them across requests (reloading takes ~1 min)."""
+    import torch
+    from my_inference import load_models_api
+
+    key = (os.path.abspath(args.checkpoint), os.path.abspath(args.config), str(args.cuda))
+    if key not in _SVC_MODEL_CACHE:
+        _SVC_MODEL_CACHE.clear()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        _SVC_MODEL_CACHE[key] = load_models_api(args, device=args.cuda)
+    return _SVC_MODEL_CACHE[key]
+
+
 def run_svc(
     source_vocal: str,
     target_timbre: str,
@@ -113,7 +130,7 @@ def run_svc(
     import types
     import torch
     from Remix.auger import echo_then_reverb_save
-    from my_inference import load_models_api, run_inference
+    from my_inference import run_inference
 
     args = types.SimpleNamespace()
     args.source = source_vocal
@@ -132,7 +149,7 @@ def run_svc(
     args.output = "./outputs"
     os.makedirs(args.output, exist_ok=True)
 
-    model_bundle = load_models_api(args, device=args.cuda)
+    model_bundle = _get_svc_models(args)
     vc_path = run_inference(args, model_bundle, device=args.cuda)
 
     mixed_out = None
@@ -218,7 +235,7 @@ def build_ui():
                 sep_device_inp = gr.Number(value=0, label="Separation GPU (device id)", precision=0, info="Use 0 for default; on CPU-only, it will fallback automatically")
             with gr.Group():
                 gr.Markdown("**SVC Settings**")
-                svc_ckpt_inp = gr.Textbox(value="", label="SVC Checkpoint", info="Path to SVC .pt weights")
+                svc_ckpt_inp = gr.Textbox(value=os.environ.get("YINGMUSIC_SVC_CKPT", ""), label="SVC Checkpoint", info="Path to SVC .pt weights")
                 svc_cfg_inp = gr.Textbox(value=default_svc_cfg, label="SVC Config", info="YAML config path (defaults to configs/YingMusic-SVC.yml if present)")
                 svc_steps_inp = gr.Number(value=100, label="Diffusion Steps", precision=0, info="Higher is steadier but slower; 100 is a good balance")
                 svc_cuda_inp = gr.Number(value=0, label="SVC GPU (cuda)", precision=0, info="GPU index when multiple GPUs are available")
