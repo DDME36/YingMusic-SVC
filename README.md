@@ -8,6 +8,7 @@
 [![Hugging Face](https://img.shields.io/badge/🤗%20HuggingFace-YingMusic--SVC-yellow)](https://huggingface.co/GiantAILab/YingMusic-SVC)
 [![ModelScope](https://img.shields.io/badge/🔮%20ModelScope-YingMusic--SVC-purple)](https://www.modelscope.cn/models/giantailab/YingMusic-SVC/)
 [![Demo Page](https://img.shields.io/badge/🎧%20Demo%20Page-YingMusic--SVC-brightgreen)](https://giantailab.github.io/YingMusic-SVC)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DDME36/YingMusic-SVC/blob/main/YingMusic_SVC_Colab.ipynb)
 
 
 
@@ -98,6 +99,10 @@ bash my_infer.sh
 ```bash
 python gradio_app.py
 ```
+### 4. **Google Colab**
+
+Open [`YingMusic_SVC_Colab.ipynb`](YingMusic_SVC_Colab.ipynb) in Colab (T4 GPU). It installs dependencies, downloads the checkpoints, and lets you either launch the Gradio app via a public share link or run separation → SVC → remix directly in the notebook.
+
 ---
 
 ## Benchmark Datasets 📚
