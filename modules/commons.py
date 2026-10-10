@@ -482,7 +482,7 @@ def load_checkpoint(
     is_distributed=False,
     load_ema=False,
 ):
-    state = torch.load(path, map_location="cpu")
+    state = torch.load(path, map_location="cpu", weights_only=False)  # full training ckpt; torch>=2.6 defaults to weights_only=True
     params = state["net"]
     if load_ema and "ema" in state:
         print("Loading EMA")

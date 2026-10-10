@@ -1,6 +1,13 @@
+import os
+import shutil
+import subprocess
+import tempfile
 import torch
 import torchaudio
-from torchaudio import sox_effects
+try:
+    from torchaudio import sox_effects
+except ImportError:  # removed in torchaudio >= 2.9
+    sox_effects = None
 from typing import List, Optional, Tuple
 import librosa
 import numpy as np
@@ -70,9 +77,26 @@ def _apply_sox_effects_cpu(wave: torch.Tensor, sr: int, eff):
     wave2d = ensure_2d(wave)
     ref_device, ref_dtype = wave2d.device, wave2d.dtype
     w_cpu = wave2d.to("cpu", dtype=torch.float32, non_blocking=False).contiguous()
-    y_cpu, _ = sox_effects.apply_effects_tensor(w_cpu, sr, eff)  # SoX 要求 CPU,float32
+    if sox_effects is not None:
+        y_cpu, _ = sox_effects.apply_effects_tensor(w_cpu, sr, eff)  # SoX 要求 CPU,float32
+    else:
+        y_cpu = _apply_sox_cli(w_cpu, sr, eff)
     y = y_cpu.to(device=ref_device, dtype=ref_dtype)
     return y
+
+def _apply_sox_cli(wave: torch.Tensor, sr: int, eff):
+    """Fallback for torchaudio without sox_effects: run the same effects through the sox binary."""
+    if shutil.which("sox") is None:
+        raise RuntimeError("sox binary not found (install it, e.g. `apt install sox`)")
+    with tempfile.TemporaryDirectory() as tmp:
+        src, dst = os.path.join(tmp, "in.wav"), os.path.join(tmp, "out.wav")
+        sf.write(src, wave.numpy().T, sr, subtype="FLOAT")
+        cmd = ["sox", src, dst] + [str(arg) for effect in eff for arg in effect]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            raise RuntimeError(f"sox failed: {res.stderr.strip()}")
+        y, _ = sf.read(dst, dtype="float32", always_2d=True)
+    return torch.from_numpy(y.T.copy())
 
 def apply_echo(wave, sr, delay_ms=150.0, feedback=0.4, wet=0.35):
     wave = ensure_2d(wave)
@@ -132,8 +156,8 @@ def echo_then_reverb_save(
     """
     audio_path = Path(audio_path)
     # 1) 读取
-    wave, sr = torchaudio.load(str(audio_path))  # [C, T], float32 or int
-    wave = wave.to(torch.float32)
+    wave, sr = sf.read(str(audio_path), dtype="float32", always_2d=True)
+    wave = torch.from_numpy(wave.T.copy())  # [C, T]
     # 统一到 [-1,1]
     if wave.abs().max() > 1.0:
         wave = wave / (wave.abs().max() + 1e-12)
