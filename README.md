@@ -101,7 +101,7 @@ python gradio_app.py
 ```
 ### 4. **Google Colab**
 
-Open [`YingMusic_SVC_Colab.ipynb`](YingMusic_SVC_Colab.ipynb) in Colab (T4 GPU) and run its single cell: it installs dependencies, downloads the checkpoints and launches the Gradio app via a public `*.gradio.live` link.
+Open [`YingMusic_SVC_Colab.ipynb`](YingMusic_SVC_Colab.ipynb) in Colab (T4 GPU) and run its single cell: it installs dependencies, downloads the checkpoints, asks you to upload a song and a reference voice, then separates, converts and remixes it inside the notebook (no web UI, so it works on the free tier).
 
 ---
 
