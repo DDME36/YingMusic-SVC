@@ -101,7 +101,7 @@ python gradio_app.py
 ```
 ### 4. **Google Colab**
 
-Open [`YingMusic_SVC_Colab.ipynb`](YingMusic_SVC_Colab.ipynb) in Colab (T4 GPU). `Runtime → Run all`: it installs dependencies, downloads the checkpoints and launches the Gradio app via a public `*.gradio.live` link.
+Open [`YingMusic_SVC_Colab.ipynb`](YingMusic_SVC_Colab.ipynb) in Colab (T4 GPU) and run its single cell: it installs dependencies, downloads the checkpoints and launches the Gradio app via a public `*.gradio.live` link.
 
 ---
 
