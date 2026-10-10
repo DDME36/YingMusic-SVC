@@ -226,140 +226,141 @@ def build_ui():
                 with gr.Column(scale=1):
                     gr.Image(header_img, show_label=False, height=140)
 
-        with gr.Tab("🧩 Global Settings"):
-            gr.Markdown("Set shared parameters here. All three modes reuse these values.")
-            with gr.Group():
-                gr.Markdown("**Separation Settings**")
-                sep_cfg_inp = gr.Textbox(value=default_sep_cfg, label="Separation Config (config_path)", info="Path to bs_roformer YAML config")
-                sep_ckpt_inp = gr.Textbox(value=default_sep_ckpt, label="Separation Checkpoint (start_check_point)", info="Path to bs_roformer ckpt")
-                sep_device_inp = gr.Number(value=0, label="Separation GPU (device id)", precision=0, info="Use 0 for default; on CPU-only, it will fallback automatically")
-            with gr.Group():
-                gr.Markdown("**SVC Settings**")
-                svc_ckpt_inp = gr.Textbox(value=os.environ.get("YINGMUSIC_SVC_CKPT", ""), label="SVC Checkpoint", info="Path to SVC .pt weights")
-                svc_cfg_inp = gr.Textbox(value=default_svc_cfg, label="SVC Config", info="YAML config path (defaults to configs/YingMusic-SVC.yml if present)")
-                svc_steps_inp = gr.Number(value=100, label="Diffusion Steps", precision=0, info="Higher is steadier but slower; 100 is a good balance")
-                svc_cuda_inp = gr.Number(value=0, label="SVC GPU (cuda)", precision=0, info="GPU index when multiple GPUs are available")
-                svc_fp16_inp = gr.Checkbox(value=True, label="FP16", info="Saves VRAM and speeds up inference on supported GPUs")
+        with gr.Tabs(selected="oneclick"):
+            with gr.Tab("🧩 Global Settings"):
+                gr.Markdown("Set shared parameters here. All three modes reuse these values.")
+                with gr.Group():
+                    gr.Markdown("**Separation Settings**")
+                    sep_cfg_inp = gr.Textbox(value=default_sep_cfg, label="Separation Config (config_path)", info="Path to bs_roformer YAML config")
+                    sep_ckpt_inp = gr.Textbox(value=default_sep_ckpt, label="Separation Checkpoint (start_check_point)", info="Path to bs_roformer ckpt")
+                    sep_device_inp = gr.Number(value=0, label="Separation GPU (device id)", precision=0, info="Use 0 for default; on CPU-only, it will fallback automatically")
+                with gr.Group():
+                    gr.Markdown("**SVC Settings**")
+                    svc_ckpt_inp = gr.Textbox(value=os.environ.get("YINGMUSIC_SVC_CKPT", ""), label="SVC Checkpoint", info="Path to SVC .pt weights")
+                    svc_cfg_inp = gr.Textbox(value=default_svc_cfg, label="SVC Config", info="YAML config path (defaults to configs/YingMusic-SVC.yml if present)")
+                    svc_steps_inp = gr.Number(value=100, label="Diffusion Steps", precision=0, info="Higher is steadier but slower; 100 is a good balance")
+                    svc_cuda_inp = gr.Number(value=0, label="SVC GPU (cuda)", precision=0, info="GPU index when multiple GPUs are available")
+                    svc_fp16_inp = gr.Checkbox(value=True, label="FP16", info="Saves VRAM and speeds up inference on supported GPUs")
 
-        with gr.Tab("🎚️ Accompaniment Separation"):
-            gr.Markdown("Upload an accompanied track to obtain Lead (vocals), Backing vocals, and pure Accompaniment.")
-            with gr.Row():
-                with gr.Column(scale=1):
-                    mix_file = gr.Audio(label="Accompanied Audio", type="filepath")
-                    # example if available
-                    example_path = os.path.join("accom_separation", "samples", "raw", "All I Want For Christmas Is You01.MP3")
-                    if os.path.isfile(example_path):
-                        gr.Examples(
-                            examples=[[example_path]],
-                            inputs=[mix_file],
-                            label="Examples",
-                        )
-                    btn_sep = gr.Button("Start Separation", variant="primary")
-                with gr.Column(scale=1):
-                    out_lead = gr.Audio(label="Lead", type="filepath")
-                    out_back = gr.Audio(label="Backing", type="filepath")
-                    out_acc = gr.Audio(label="Accompaniment", type="filepath")
-            btn_sep.click(
-                fn=run_separation,
-                inputs=[mix_file, sep_cfg_inp, sep_ckpt_inp, sep_device_inp],
-                outputs=[out_lead, out_back, out_acc],
-            )
+            with gr.Tab("🎚️ Accompaniment Separation"):
+                gr.Markdown("Upload an accompanied track to obtain Lead (vocals), Backing vocals, and pure Accompaniment.")
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        mix_file = gr.Audio(label="Accompanied Audio", type="filepath")
+                        # example if available
+                        example_path = os.path.join("accom_separation", "samples", "raw", "All I Want For Christmas Is You01.MP3")
+                        if os.path.isfile(example_path):
+                            gr.Examples(
+                                examples=[[example_path]],
+                                inputs=[mix_file],
+                                label="Examples",
+                            )
+                        btn_sep = gr.Button("Start Separation", variant="primary")
+                    with gr.Column(scale=1):
+                        out_lead = gr.Audio(label="Lead", type="filepath")
+                        out_back = gr.Audio(label="Backing", type="filepath")
+                        out_acc = gr.Audio(label="Accompaniment", type="filepath")
+                btn_sep.click(
+                    fn=run_separation,
+                    inputs=[mix_file, sep_cfg_inp, sep_ckpt_inp, sep_device_inp],
+                    outputs=[out_lead, out_back, out_acc],
+                )
 
-        with gr.Tab("🎤 Standalone SVC"):
-            gr.Markdown("Upload source vocal and reference timbre (optionally upload accompaniment to auto-mix).")
-            with gr.Row():
-                with gr.Column(scale=1):
-                    with gr.Row():
-                        src_vocal = gr.Audio(label="Source Vocal (leading)", type="filepath")
-                        ref_timbre = gr.Audio(label="Reference Timbre", type="filepath")
-                    # sample timbre buttons
-                    if len(sample_timbres) >= 1:
-                        btn_t1 = gr.Button("Use Sample Timbre 1")
-                    if len(sample_timbres) >= 2:
-                        btn_t2 = gr.Button("Use Sample Timbre 2")
-                    accompany_opt = gr.Audio(label="Accompaniment (optional)", type="filepath")
-                    btn_svc = gr.Button("Convert", variant="primary")
-                with gr.Column(scale=1):
-                    out_vc = gr.Audio(label="Converted Vocal", type="filepath")
-                    out_mixed = gr.Audio(label="Mixed with Accompaniment (if provided)", type="filepath")
+            with gr.Tab("🎤 Standalone SVC"):
+                gr.Markdown("Upload source vocal and reference timbre (optionally upload accompaniment to auto-mix).")
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        with gr.Row():
+                            src_vocal = gr.Audio(label="Source Vocal (leading)", type="filepath")
+                            ref_timbre = gr.Audio(label="Reference Timbre", type="filepath")
+                        # sample timbre buttons
+                        if len(sample_timbres) >= 1:
+                            btn_t1 = gr.Button("Use Sample Timbre 1")
+                        if len(sample_timbres) >= 2:
+                            btn_t2 = gr.Button("Use Sample Timbre 2")
+                        accompany_opt = gr.Audio(label="Accompaniment (optional)", type="filepath")
+                        btn_svc = gr.Button("Convert", variant="primary")
+                    with gr.Column(scale=1):
+                        out_vc = gr.Audio(label="Converted Vocal", type="filepath")
+                        out_mixed = gr.Audio(label="Mixed with Accompaniment (if provided)", type="filepath")
 
-            # wire sample buttons for SVC
-            def _sample_1():
-                return sample_timbres[0] if len(sample_timbres) >= 1 else None
+                # wire sample buttons for SVC
+                def _sample_1():
+                    return sample_timbres[0] if len(sample_timbres) >= 1 else None
 
-            def _sample_2():
-                return sample_timbres[1] if len(sample_timbres) >= 2 else None
+                def _sample_2():
+                    return sample_timbres[1] if len(sample_timbres) >= 2 else None
 
-            if len(sample_timbres) >= 1:
-                btn_t1.click(fn=_sample_1, inputs=[], outputs=[ref_timbre])
-            if len(sample_timbres) >= 2:
-                btn_t2.click(fn=_sample_2, inputs=[], outputs=[ref_timbre])
+                if len(sample_timbres) >= 1:
+                    btn_t1.click(fn=_sample_1, inputs=[], outputs=[ref_timbre])
+                if len(sample_timbres) >= 2:
+                    btn_t2.click(fn=_sample_2, inputs=[], outputs=[ref_timbre])
 
-            btn_svc.click(
-                fn=run_svc,
-                inputs=[
-                    src_vocal,
-                    ref_timbre,
-                    accompany_opt,
-                    svc_ckpt_inp,
-                    svc_cfg_inp,
-                    svc_steps_inp,
-                    svc_cuda_inp,
-                    svc_fp16_inp,
-                ],
-                outputs=[out_vc, out_mixed],
-            )
+                btn_svc.click(
+                    fn=run_svc,
+                    inputs=[
+                        src_vocal,
+                        ref_timbre,
+                        accompany_opt,
+                        svc_ckpt_inp,
+                        svc_cfg_inp,
+                        svc_steps_inp,
+                        svc_cuda_inp,
+                        svc_fp16_inp,
+                    ],
+                    outputs=[out_vc, out_mixed],
+                )
 
-        with gr.Tab("⚡ One-Click Separation + SVC"):
-            gr.Markdown("Upload accompanied audio and reference timbre, then run separation and conversion in one go.")
-            with gr.Row():
-                with gr.Column(scale=1):
-                    with gr.Row():
-                        mix_in = gr.Audio(label="Accompanied Audio", type="filepath")
-                        ref_in = gr.Audio(label="Reference Timbre", type="filepath")
-                    # example if available
-                    example_path2 = os.path.join("accom_separation", "samples", "raw", "All I Want For Christmas Is You01.MP3")
-                    if os.path.isfile(example_path2):
-                        gr.Examples(
-                            examples=[[example_path2]],
-                            inputs=[mix_in],
-                            label="Examples",
-                        )
-                    # sample timbre buttons for pipeline
-                    if len(sample_timbres) >= 1:
-                        btn_pt1 = gr.Button("Use Sample Timbre 1")
-                    if len(sample_timbres) >= 2:
-                        btn_pt2 = gr.Button("Use Sample Timbre 2")
-                    btn_all = gr.Button("Process All", variant="primary")
-                with gr.Column(scale=1):
-                    oc_lead = gr.Audio(label="Lead", type="filepath")
-                    oc_back = gr.Audio(label="Backing", type="filepath")
-                    oc_acc = gr.Audio(label="Accompaniment", type="filepath")
-                    oc_vc = gr.Audio(label="Converted Vocal", type="filepath")
-                    oc_mixed = gr.Audio(label="Mixed with Accompaniment", type="filepath")
+            with gr.Tab("⚡ One-Click Separation + SVC", id="oneclick"):
+                gr.Markdown("Upload accompanied audio and reference timbre, then run separation and conversion in one go.")
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        with gr.Row():
+                            mix_in = gr.Audio(label="Accompanied Audio", type="filepath")
+                            ref_in = gr.Audio(label="Reference Timbre", type="filepath")
+                        # example if available
+                        example_path2 = os.path.join("accom_separation", "samples", "raw", "All I Want For Christmas Is You01.MP3")
+                        if os.path.isfile(example_path2):
+                            gr.Examples(
+                                examples=[[example_path2]],
+                                inputs=[mix_in],
+                                label="Examples",
+                            )
+                        # sample timbre buttons for pipeline
+                        if len(sample_timbres) >= 1:
+                            btn_pt1 = gr.Button("Use Sample Timbre 1")
+                        if len(sample_timbres) >= 2:
+                            btn_pt2 = gr.Button("Use Sample Timbre 2")
+                        btn_all = gr.Button("Process All", variant="primary")
+                    with gr.Column(scale=1):
+                        oc_lead = gr.Audio(label="Lead", type="filepath")
+                        oc_back = gr.Audio(label="Backing", type="filepath")
+                        oc_acc = gr.Audio(label="Accompaniment", type="filepath")
+                        oc_vc = gr.Audio(label="Converted Vocal", type="filepath")
+                        oc_mixed = gr.Audio(label="Mixed with Accompaniment", type="filepath")
 
-            # wire sample buttons for pipeline
-            if len(sample_timbres) >= 1:
-                btn_pt1.click(fn=_sample_1, inputs=[], outputs=[ref_in])
-            if len(sample_timbres) >= 2:
-                btn_pt2.click(fn=_sample_2, inputs=[], outputs=[ref_in])
+                # wire sample buttons for pipeline
+                if len(sample_timbres) >= 1:
+                    btn_pt1.click(fn=_sample_1, inputs=[], outputs=[ref_in])
+                if len(sample_timbres) >= 2:
+                    btn_pt2.click(fn=_sample_2, inputs=[], outputs=[ref_in])
 
-            btn_all.click(
-                fn=run_pipeline,
-                inputs=[
-                    mix_in,
-                    ref_in,
-                    sep_cfg_inp,
-                    sep_ckpt_inp,
-                    sep_device_inp,
-                    svc_ckpt_inp,
-                    svc_cfg_inp,
-                    svc_steps_inp,
-                    svc_cuda_inp,
-                    svc_fp16_inp,
-                ],
-                outputs=[oc_lead, oc_back, oc_acc, oc_vc, oc_mixed],
-            )
+                btn_all.click(
+                    fn=run_pipeline,
+                    inputs=[
+                        mix_in,
+                        ref_in,
+                        sep_cfg_inp,
+                        sep_ckpt_inp,
+                        sep_device_inp,
+                        svc_ckpt_inp,
+                        svc_cfg_inp,
+                        svc_steps_inp,
+                        svc_cuda_inp,
+                        svc_fp16_inp,
+                    ],
+                    outputs=[oc_lead, oc_back, oc_acc, oc_vc, oc_mixed],
+                )
 
         gr.Markdown("— Enjoy —")
         return demo
