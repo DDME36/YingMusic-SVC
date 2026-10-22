@@ -2,7 +2,6 @@ import os
 import random
 import time
 import yaml
-import wandb
 import numpy as np
 import torch
 import argparse
@@ -481,6 +480,7 @@ def wandb_init(args: argparse.Namespace, config: Dict, batch_size: int) -> None:
     """
 
     if not dist.is_initialized() or dist.get_rank() == 0:
+        import wandb  # training-only dependency
         if args.wandb_offline:
             wandb.init(mode='offline',
                        project='msst',

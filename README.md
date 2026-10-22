@@ -66,7 +66,11 @@ cd YingMusic-SVC
 
 conda create -n ymsvc python=3.10
 conda activate ymsvc
+# install PyTorch for your CUDA version first (https://pytorch.org), e.g.
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu126
 pip install -r requirements.txt
+# optional: web UI (gradio_app.py)
+pip install -r requirements-app.txt
 
 # install ffmpeg & sox
 sudo apt update
@@ -97,11 +101,18 @@ bash my_infer.sh
 ### 3. **Gradio APP**
 
 ```bash
-python gradio_app.py
+pip install -r requirements-app.txt
+python gradio_app.py --download          # first run: fetch checkpoints
+python gradio_app.py --lang en --share   # English UI + public link
 ```
+Inputs can be uploaded, recorded with the microphone, or given as a YouTube link (via `yt-dlp`).
+The UI is available in Thai and English (switch at the top right).
+
 ### 4. **Google Colab**
 
-Open [`YingMusic_SVC_Colab.ipynb`](YingMusic_SVC_Colab.ipynb) in Colab (T4 GPU) and run its single cell: it installs dependencies, downloads the checkpoints, asks you to upload a song and a reference voice, then separates, converts and remixes it inside the notebook (no web UI, so it works on the free tier).
+Open [`YingMusic_SVC_Colab.ipynb`](YingMusic_SVC_Colab.ipynb) in Colab (T4 GPU):
+run **1️⃣ Install**, then **2️⃣ Open the web UI** (rendered inside the notebook), or use the **form mode** cell
+to convert without a web UI. Both accept YouTube links.
 
 ---
 

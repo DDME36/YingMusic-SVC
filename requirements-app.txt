@@ -1,0 +1,4 @@
+# Web UI (gradio_app.py) and the Colab notebook
+-r requirements.txt
+gradio>=5.23.0,<6
+yt-dlp
