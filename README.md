@@ -66,7 +66,11 @@ cd YingMusic-SVC
 
 conda create -n ymsvc python=3.10
 conda activate ymsvc
+# install PyTorch for your CUDA version first (https://pytorch.org), e.g.
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu126
 pip install -r requirements.txt
+# optional: web UI (gradio_app.py)
+pip install -r requirements-app.txt
 
 # install ffmpeg & sox
 sudo apt update
